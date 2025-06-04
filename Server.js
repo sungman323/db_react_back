@@ -12,7 +12,7 @@ const jwt = require('jsonwebtoken');
 const SECRET_KEY = 'test';
 
 const connection = mysql.createConnection({
-  host:'localhost',
+  host:'db-react-mariadb:3306',
   user:'root',
   password:'1234',
   database:'kdt'
