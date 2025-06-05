@@ -380,6 +380,47 @@ app.post('/fruits', (req, res)=>{
   )  
 });
 
+// 지니펫 회원가입
+app.post('/g_register', async (req, res) => {
+  try {
+    const { username, password, tel, email } = req.body;
+    const hash = await bcrypt.hash(password, 10);
+
+    connection.query(
+      'INSERT INTO ginipet_users (username, password, tel, email) VALUES (?, ?, ?, ?)', [username, hash, tel, email],
+      (err) => {
+        if (err) {
+          if (err.code == 'ER_DUP_ENTRY') {
+            return res.status(400).json({ error: '이미 존재하는 아이디입니다.' });
+          }
+          return res.status(500).json({ error: '회원가입 실패' });
+        }
+        res.json({ success: true });
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ error: '서버 내부 오류' });
+  }
+});
+
+app.post('/g_login', async(req, res) => {
+  const {username, password} = req.body;
+  connection.query('SELECT * FROM ginipet_users WHERE username=?', [username], async(err, result)=>{
+    if(err||result.length===0){
+      return res.status(401).json({error:'아이디 또는 비밀번호를 확인해주세요.'});
+    }
+
+    const users = result[0];
+    const isMatch = await bcrypt.compare(password, users.password);
+
+    if(!isMatch){
+      return res.status(401).json({error : '아이디 또는 비밀번호를 확인해주세요.'})
+    }
+
+    const token = jwt.sign({id:users.id, username:users.username}, SECRET_KEY, {expiresIn:'1h'});
+    res.json({token});
+  })
+});
 
 app.listen(port, () => {
   console.log('Listening...');
